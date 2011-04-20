@@ -1,13 +1,15 @@
-var Dapper = (function() {
+var dapper = (function() {
 	
-	// private
-	var _common_detections, _detect_library;
+	var _libraries, api;
 	
-	// public
-	var api;
-	
+	_libraries = {
+		detections: {
+			jQuery: function() { return typeof jQuery !== 'undefined'; }
+		},
+		
+	}
 	_common_detections = {
-		jQuery: function() { return typeof jQuery !== 'undefined'; }
+		
 	};
 	
 	_detect_library = function() {
@@ -16,7 +18,7 @@ var Dapper = (function() {
 		
 		for (name in api) {
 			lib = api[name];
-			if (lib instanceof Dapper.Library) { 
+			if (lib instanceof dapper.Library) { 
 				if (lib.detect()) { 
 					break;
 				}
@@ -32,28 +34,33 @@ var Dapper = (function() {
 	
 	api = {
 		
-		detect: function(library_name, detection) {
-			detection = detection || Dapper._common_detections[library_name] || $.noop();
-			api[library_name] = new Dapper.Library(library_name, detection);
+		use: function(library_name, detection) {
+			detection = detection || _common_detections[library_name] || $.noop();
+			api[library_name] = new dapper.Library(library_name, detection);
 		},
 
-		handle: function(function_name) {
+		exec: function(function_name) {
 			var lib = _detect_library();
-			api.handle = lib.handle;
+			
+			api.handle = function() {
+				lib.handle.apply(lib, arguments);
+			}
+			
 			return api.handle.apply(api, arguments);
 		}
 	}
-	
+
 	return api;
+	
 })();
 
-Dapper.Library = function(name, detection) {
+dapper.Library = function(name, detection) {
 	this.name = name;
 	this.detect = detection;
-	this.maps = [];
+	this.maps = {};
 }
 
-Dapper.Library.prototype = {
+dapper.Library.prototype = {
 	
 	map: function(function_name, handler) {
 		this.maps[function_name] = handler;
